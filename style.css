@@ -377,3 +377,14 @@ textarea.sb-ta-small {
         overflow: visible;
     }
 }
+
+.sb-presets-form input.text_pole[disabled],
+.sb-presets-form textarea.text_pole[disabled] {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.sb-popup-btns .sb-btn:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+}

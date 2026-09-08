@@ -127,7 +127,7 @@ LENGTH: max 250 words.`;
 // Версия встроенных пресетов. Растёт, когда меняется текст инструкции: настройки
 // уже сохранены у пользователя, и без этого он остался бы со старой редакцией.
 // Редактора пресетов пока нет (этап 4), поэтому перезапись встроенных безопасна.
-const SEED_VERSION = 6;
+const SEED_VERSION = 7;
 
 const ILLUSTRATION_INSTRUCTION = `You are writing a SCENE_PROMPT for an image generator, based on the roleplay
 post below. Output ONLY the prompt text. No HTML, no JSON, no quotes around it,
@@ -288,7 +288,6 @@ const defaultSettings = {
             name: 'Манхва',
             // Встроенный: обновляется вместе с расширением, пока его не правили.
             builtIn: true,
-            customized: false,
             instruction: MANHWA_INSTRUCTION,
             aspectRatio: '16:9',
             imageSize: '2K',
@@ -298,7 +297,6 @@ const defaultSettings = {
             id: 'illustration',
             name: 'Иллюстрация',
             builtIn: true,
-            customized: false,
             instruction: ILLUSTRATION_INSTRUCTION,
             aspectRatio: '16:9',
             imageSize: '2K',
@@ -310,6 +308,18 @@ const defaultSettings = {
 // ═══════════════════════════════════════════════════════════════════════
 // Настройки и логи
 // ═══════════════════════════════════════════════════════════════════════
+
+/**
+ * Свободный id для пресета. Работает со списком напрямую, а не через
+ * getSettings: вызывается в том числе изнутри самого getSettings.
+ */
+function sbUniquePresetId(presets, base = 'preset') {
+    const slug = String(base).toLowerCase().replace(/[^a-z0-9-]+/g, '-').replace(/^-|-$/g, '') || 'preset';
+    let id = slug;
+    let n = 2;
+    while (presets.some(p => p.id === id)) id = `${slug}-${n++}`;
+    return id;
+}
 
 function sbLog(level, ...args) {
     const settings = getSettings();
@@ -334,17 +344,25 @@ function getSettings() {
     }
     if (settings.seedVersion !== SEED_VERSION) {
         const removed = Array.isArray(settings.removedBuiltIns) ? settings.removedBuiltIns : [];
+
+        // Раньше правка встроенного пресета делала его «своим», и обновления
+        // инструкции до него больше не доходили. Теперь встроенные только для
+        // чтения, но уже правленые копии терять нельзя — отцепляем их в
+        // самостоятельные пресеты, а встроенный возвращаем чистым.
+        for (const preset of settings.presets) {
+            if (!preset.builtIn || !preset.customized) continue;
+            preset.id = sbUniquePresetId(settings.presets, `${preset.id}-my`);
+            preset.name = `${preset.name} — моя версия`;
+            delete preset.builtIn;
+            delete preset.customized;
+            sbLog('WARN', `Правленый пресет отцеплён как «${preset.name}»`);
+        }
+
         for (const seeded of defaultSettings.presets) {
             if (removed.includes(seeded.id)) continue;
             const index = settings.presets.findIndex(p => p.id === seeded.id);
-            if (index === -1) {
-                settings.presets.push(structuredClone(seeded));
-                continue;
-            }
-            // Правки пользователя неприкосновенны: отредактированный пресет
-            // перестаёт быть встроенным и обновлением не затирается.
-            if (settings.presets[index].customized) continue;
-            settings.presets[index] = structuredClone(seeded);
+            if (index === -1) settings.presets.push(structuredClone(seeded));
+            else settings.presets[index] = structuredClone(seeded);
         }
         // Старый лимит (900) не оставлял места под размышления модели.
         if (!settings.maxTokens || settings.maxTokens < 4000) {
@@ -953,12 +971,7 @@ function watchChatForNewMessages() {
 // ═══════════════════════════════════════════════════════════════════════
 
 function sbNewPresetId(base = 'preset') {
-    const settings = getSettings();
-    const slug = String(base).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'preset';
-    let id = slug;
-    let n = 2;
-    while (settings.presets.some(p => p.id === id)) id = `${slug}-${n++}`;
-    return id;
+    return sbUniquePresetId(getSettings().presets, base);
 }
 
 function sbEscapeHtml(text) {
@@ -1033,7 +1046,7 @@ function sbOpenPresetManager() {
         listEl.innerHTML = settings.presets.map(p => `
             <div class="sb-preset-item ${p.id === editingId ? 'active' : ''}" data-id="${sbEscapeHtml(p.id)}">
                 <span class="sb-preset-name">${sbEscapeHtml(p.name)}</span>
-                ${p.builtIn && !p.customized ? '<span class="sb-preset-tag">встроенный</span>' : ''}
+                ${p.builtIn ? '<span class="sb-preset-tag">встроенный</span>' : ''}
             </div>`).join('');
         for (const item of listEl.querySelectorAll('.sb-preset-item')) {
             item.addEventListener('click', () => {
@@ -1049,27 +1062,39 @@ function sbOpenPresetManager() {
     function renderForm() {
         const preset = getSettings().presets.find(p => p.id === editingId);
         if (!preset) { formEl.innerHTML = ''; return; }
+        // Встроенные пресеты обновляются вместе с расширением, поэтому правки
+        // в них всё равно были бы затёрты. Правится копия, а не оригинал.
+        const locked = !!preset.builtIn;
+        const ro = locked ? 'readonly disabled' : '';
+
         formEl.innerHTML = `
+            ${locked ? '<div class="sb-warn">Встроенный пресет — только для чтения, чтобы до него доходили обновления. Нажми «Дублировать» и правь копию.</div>' : ''}
             <label class="sb-field-label">Название</label>
-            <input type="text" class="text_pole" data-f="name" value="${sbEscapeHtml(preset.name)}">
+            <input type="text" class="text_pole" data-f="name" value="${sbEscapeHtml(preset.name)}" ${ro}>
 
             <div class="sb-form-row">
                 <div>
                     <label class="sb-field-label">aspect_ratio</label>
-                    <input type="text" class="text_pole" data-f="aspectRatio" value="${sbEscapeHtml(preset.aspectRatio || '')}" placeholder="16:9">
+                    <input type="text" class="text_pole" data-f="aspectRatio" value="${sbEscapeHtml(preset.aspectRatio || '')}" placeholder="16:9" ${ro}>
                 </div>
                 <div>
                     <label class="sb-field-label">image_size</label>
-                    <input type="text" class="text_pole" data-f="imageSize" value="${sbEscapeHtml(preset.imageSize || '')}" placeholder="2K">
+                    <input type="text" class="text_pole" data-f="imageSize" value="${sbEscapeHtml(preset.imageSize || '')}" placeholder="2K" ${ro}>
                 </div>
             </div>
 
             <label class="sb-field-label">Инструкция для модели</label>
-            <textarea class="text_pole sb-ta-big" data-f="instruction" spellcheck="false">${sbEscapeHtml(preset.instruction || '')}</textarea>
+            <textarea class="text_pole sb-ta-big" data-f="instruction" spellcheck="false" ${ro}>${sbEscapeHtml(preset.instruction || '')}</textarea>
 
             <label class="sb-field-label">Шаблон обёртки — обязателен плейсхолдер {{PROMPT}}</label>
-            <textarea class="text_pole sb-ta-small" data-f="wrapper" spellcheck="false">${sbEscapeHtml(preset.wrapper || DEFAULT_WRAPPER)}</textarea>
+            <textarea class="text_pole sb-ta-small" data-f="wrapper" spellcheck="false" ${ro}>${sbEscapeHtml(preset.wrapper || DEFAULT_WRAPPER)}</textarea>
             <div class="sb-hint">Доступные плейсхолдеры: {{PROMPT}}, {{ASPECT_RATIO}}, {{IMAGE_SIZE}}</div>`;
+
+        const saveBtn = overlay.querySelector('[data-act="save"]');
+        if (saveBtn) {
+            saveBtn.disabled = locked;
+            saveBtn.title = locked ? 'Встроенный пресет не редактируется — сделай копию' : '';
+        }
     }
 
     function collectForm() {
@@ -1084,6 +1109,10 @@ function sbOpenPresetManager() {
         const settings = getSettings();
         const preset = settings.presets.find(p => p.id === editingId);
         if (!preset) return;
+        if (preset.builtIn) {
+            toastr.info('Встроенный пресет не редактируется — нажми «Дублировать»', 'Storyboard', { timeOut: 3500 });
+            return;
+        }
         const values = collectForm();
 
         if (!String(values.name || '').trim()) {
@@ -1095,9 +1124,6 @@ function sbOpenPresetManager() {
             return;
         }
 
-        const changed = ['name', 'instruction', 'aspectRatio', 'imageSize', 'wrapper']
-            .some(key => String(preset[key] ?? '') !== String(values[key] ?? ''));
-
         Object.assign(preset, {
             name: values.name.trim(),
             instruction: values.instruction,
@@ -1105,10 +1131,6 @@ function sbOpenPresetManager() {
             imageSize: values.imageSize.trim() || '2K',
             wrapper: values.wrapper,
         });
-
-        // Тронутый встроенный пресет становится твоим и больше не перезаписывается
-        // обновлением расширения.
-        if (changed && preset.builtIn) preset.customized = true;
 
         saveSettings();
         renderList();
@@ -1400,5 +1422,5 @@ jQuery(async () => {
         watchChatForNewMessages();
     }, 1000);
 
-    console.log('[Storyboard] Расширение загружено, версия 0.5.0');
+    console.log('[Storyboard] Расширение загружено, версия 0.5.1');
 });
