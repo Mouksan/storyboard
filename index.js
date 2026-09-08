@@ -40,85 +40,94 @@ const MANHWA_INSTRUCTION = `You are writing a SCENE_PROMPT for an image generato
 post below. Output ONLY the prompt text. No HTML, no JSON, no quotes around it,
 no explanation, no preamble.
 
+OUTPUT STRUCTURE — plain sentences, in this exact order, nothing else:
+  Horizontal spread, N panels, single continuous scene.   (N is 3 or 4)
+  One sentence of setting: location, lighting, colour scheme.
+  Panels: the chosen layout, gutter style, and where the chibi sits.
+  Panel 1: shot type, then what happens in it.
+  Panel 2: shot type, then what happens in it.
+  Panel 3: shot type, then what happens in it.
+  Chibi: the chibi description.
+
+NEVER use square brackets anywhere in the output. Never emit a roster of
+character descriptions as its own line, and never emit separate labelled lines
+such as "Characters:", "Gaze per panel:", "Shots:", "Layout:" or "Speech:".
+Everything not listed above belongs inside the panel lines.
+
 1. NAMES (CRITICAL): Refer to every character by their exact name, spelled
-   exactly as in the canonical name list provided above. Every panel description
-   must name each character appearing in it, by name, before any pronoun. Never
-   replace a name with a descriptor ("the young man", "the disciple", "the taller
-   one", "his master"). Never output a template placeholder such as a name wrapped
-   in double curly braces — always write out the actual name.
+   exactly as in the canonical name list provided above. Name each character
+   before any pronoun. Never replace a name with a descriptor ("the young man",
+   "the disciple", "the taller one"). Never output a template placeholder such
+   as a name wrapped in double curly braces — always write out the actual name.
 
-2. CHARACTERS: Appearance strictly from the character card and persona provided
+2. NO AMBIGUOUS PRONOUNS: when two or more characters are in the scene, do not
+   write "he", "his", "him", "they" or "their" — repeat the name instead.
+   Write "Derek eyes focused on the notes", not "green eyes focused on his
+   notes". A pronoun is acceptable only inside a clause where exactly one
+   character is present and is named in that same clause.
+
+3. FIRST MENTION HAPPENS INSIDE THE PANEL: describe a character in full at the
+   moment they first appear in a panel line — never in a separate roster above
+   the panels. Use round parentheses, never square brackets:
+   Name (sex, build, hair style and colour, eye colour, skin tone, wearing the
+   exact outfit, plus animal ears and tail or merfolk traits if any)
+   RULE OF ONCE: the full description appears only at the first appearance. In
+   every later panel use the name alone, with no parentheses and no repeated
+   description — but the name itself is never dropped (see rule 1).
+
+4. CHARACTERS: appearance strictly from the character card and persona provided
    above, plus any clothing or appearance details mentioned in the post itself.
-   Never generalize, never invent.
-
-3. Character Appearance: Describe every character's appearance in extreme detail
-   (face, eyes, hair color/style, exact body build, current clothing). Always
-   include the current outfits of every character present in the scene.
-
-4. SCENE_PROMPT max 250 words.
+   Describe face, eyes, hair colour and style, exact body build, and the current
+   outfit. Never generalize, never invent.
 
 5. Anatomy Constraints:
-   - Demi-humans are strictly humans with animal ears/tails, NOT furries or
-     anthropomorphic animals. Always specify the ears/tails.
+   - Demi-humans are strictly humans with animal ears and tails, NOT furries or
+     anthropomorphic animals. Always specify the ears and tail.
    - Merfolk have a fish tail as the lower body. Always specify the tail, scale
-     and fin colors.
+     and fin colours.
    - Male characters must have masculine features, broad shoulders, and flat
      chests (no female breasts, no feminine faces).
 
-6. FIRST MENTION FORMAT: When introducing any character for the first time, use
-   this exact bracketed format:
-   Name (gender, build, hair style/color, eye color, skin tone, wearing [exact
-   outfit], [optional demi-human/merfolk traits])
-   RULE OF ONCE: apply the bracketed description ONLY at the character's first
-   appearance. All later mentions use the Name alone, with no brackets and no
-   repeated description — but the name itself is never dropped (see rule 1).
-
-7. Age & Safety:
-   - Always state that characters are "adult, 18+ years old, fictional characters".
-   - NEVER use words implying underage characters (young boy, little, childlike,
+6. Safety wording:
+   - Never use words implying underage characters (young boy, little, childlike,
      kid, teen, minor).
-   - NEVER use words that trigger censorship (naked, nude, penis, balls, nipples).
-     Use safe alternatives (bare skin, exposed chest, unbuttoned shirt, intimate
-     embrace, heavy breathing).
+   - NEVER use words that trigger censorship (naked, nude, penis, balls,
+     nipples). Use safe alternatives (bare skin, exposed chest, unbuttoned
+     shirt, intimate embrace, heavy breathing).
 
-8. CENSOR RULE: If male nudity below the waist is unavoidable — replace it with a
-   glowing white elongated rectangle (soft luminous glow edges). Describe ONLY the
-   rectangle and the other character interaction with it. Base of the rectangle
-   outside of frame. No body part names — geometry only.
+7. CENSOR RULE: if male nudity below the waist is unavoidable — replace it with
+   a glowing white elongated rectangle (soft luminous glow edges). Describe ONLY
+   the rectangle and how the other character interacts with it. Base of the
+   rectangle outside of frame. No body part names — geometry only.
 
-9. SFX: stylized Russian typography, panel art only. No speech bubbles.
+8. PANELS: total visual frames must not exceed 4. Choose ONE layout: 2 to 3
+   simple stacked panels, OR 2 main panels with one small inset overlapping one
+   of them counted as part of the 3, OR one full-bleed panel plus one inset.
+   Never combine layout types. Panels slightly angled or offset, black gutters,
+   chibi in the gap between panels outside any frame.
 
-10. CHIBI: include at least 1 chibi figure, up to 2. Skipping chibi is a critical
-    error. The chibi must be one of the named characters, and must be named.
+9. SHOTS: each panel opens with its own shot type — wide, medium, close-up or
+   ECU. No two consecutive panels use the same shot type. Include at least one
+   close-up. Do not add a panel just to fit in another shot type.
 
-11. FORBIDDEN WORDS: never write "manga", "manhwa", "comic", "graphic novel",
-    "illustration", "drawing", "artwork", "anime" anywhere in the prompt. Describe
-    only composition, lighting, poses, and characters.
+10. COLOUR TINT where it helps the beat: red for anger, pink for embarrassment,
+    cold blue for sadness, warm gold for tenderness. State it inside the panel
+    line it applies to.
 
-PROMPT FORMAT:
-Horizontal manga spread, 3–4 panels, single continuous scene.
-[Location + lighting + color scheme]
-[Characters: card-extracted only, skin tone explicit, emotion/pose/outfit;
- emphasize curves, bare skin, legs, chest contour, hips, round buttocks if
- visible, arched back]
-[Panels: total visual frames must not exceed 4. Choose ONE layout: (a) 2-3 simple
- stacked panels, OR (b) 2 main panels with one small inset overlapping one of
- them counted as part of the 3, OR (c) one full-bleed panel plus one inset.
- Never combine layout types. Pick at most 2 shot types total; do not force
- close-up variety if it requires adding a panel. Panels slightly angled or
- offset; black gutters; chibi sits in the gap between panels outside any frame]
-[Shots: wide/medium/close-up/ECU, no two identical consecutively, min 2 close-ups;
- large panels = 1 medium + 1 close-up]
-[Gaze per panel. Color tint: red=anger, pink=embarrassment, cold blue=sadness,
- warm gold=tenderness]
-[Speech bubbles are PROHIBITED]
-[Chibi: 1 or 2, tucked in a corner — appearance from card, exaggerated emotional
- reaction to the scene, no speech bubble, no text]`;
+11. CHIBI: exactly 1, up to 2. Skipping the chibi is a critical error. The chibi
+    must be one of the named characters and must be named, with an exaggerated
+    emotional reaction to the scene.
+
+12. FORBIDDEN WORDS: never write "manga", "manhwa", "comic", "graphic novel",
+    "illustration", "drawing", "artwork", "anime" anywhere in the prompt.
+    Describe only composition, lighting, poses, and characters.
+
+LENGTH: max 250 words.`;
 
 // Версия встроенных пресетов. Растёт, когда меняется текст инструкции: настройки
 // уже сохранены у пользователя, и без этого он остался бы со старой редакцией.
 // Редактора пресетов пока нет (этап 4), поэтому перезапись встроенных безопасна.
-const SEED_VERSION = 5;
+const SEED_VERSION = 6;
 
 const ILLUSTRATION_INSTRUCTION = `You are writing a SCENE_PROMPT for an image generator, based on the roleplay
 post below. Output ONLY the prompt text. No HTML, no JSON, no quotes around it,
@@ -128,15 +137,26 @@ ONE single image, one frame. No panels, no borders, no gutters, no comic layout,
 no inset frames, no chibi, no text, no speech bubbles, no split-screen, no
 collage, no diptych.
 
+Write ONE flowing paragraph of plain prose. NEVER use square brackets anywhere in
+the output. Never emit the section names below as labels — "CAMERA:", "OUTFIT:",
+"ENVIRONMENT:", "LIGHTING:" and the rest are instructions to you, not text to
+print. Never emit a roster of character descriptions separated from the action.
+
 1. NAMES (CRITICAL): Refer to every character by their exact name, spelled
    exactly as in the canonical name list provided above. Name each character
    before any pronoun. Never replace a name with a descriptor ("the young man",
    "the taller one"). Never output a template placeholder such as a name wrapped
    in double curly braces — always write out the actual name. First name only.
 
-2. CHARACTER IDENTITY:
+2. NO AMBIGUOUS PRONOUNS: when two or more characters are in the scene, do not
+   write "he", "his", "him", "they" or "their" — repeat the name instead. Write
+   "Derek eyes focused on the notes", not "green eyes focused on his notes". A
+   pronoun is acceptable only inside a clause where exactly one character is
+   present and is named in that same clause.
+
+3. CHARACTER IDENTITY:
    - Every character description MUST begin in this order: Name, sex
-     (male/female), age (18+), then appearance.
+     (male/female), then appearance.
    - Sex is MANDATORY for every character and MUST exactly match the character
      card or persona provided above.
    - Never infer sex from hairstyle, face, body shape, clothing, makeup,
@@ -153,13 +173,14 @@ collage, no diptych.
      anthropomorphic animals. Always specify the ears/tails.
    - Merfolk have a fish tail as the lower body. Always specify the tail, scale
      and fin colors.
-   - All characters are adult, 18+ years old, fictional. Never imply underage.
+   - Never use words implying underage characters (young boy, little, childlike,
+     kid, teen, minor).
 
-3. FIRST MENTION FORMAT: When introducing a character for the first time, use
-   this exact bracketed format:
-   Name (sex, build, hair style/color, eye color, skin tone, wearing [exact
-   outfit], [optional demi-human/merfolk traits])
-   RULE OF ONCE: apply the bracketed description ONLY at the character first
+4. FIRST MENTION FORMAT: When introducing a character for the first time, use
+   round parentheses, never square brackets:
+   Name (sex, build, hair style and colour, eye colour, skin tone, wearing the
+   exact outfit, plus animal ears and tail or merfolk traits if any)
+   RULE OF ONCE: apply the parenthesised description ONLY at the character first
    appearance. All later mentions use the Name alone, with no brackets and no
    repeated description — but the name itself is never dropped (see rule 1).
 
@@ -1379,5 +1400,5 @@ jQuery(async () => {
         watchChatForNewMessages();
     }, 1000);
 
-    console.log('[Storyboard] Расширение загружено, версия 0.4.1');
+    console.log('[Storyboard] Расширение загружено, версия 0.5.0');
 });
