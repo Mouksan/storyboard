@@ -729,7 +729,7 @@ function sbOpenPopup(messageId) {
     overlay.innerHTML = `
         <div class="sb-popup" role="dialog" aria-label="Промпт для картинки">
             <div class="sb-popup-head">
-                <div class="sb-popup-title">⊹ Промпт для картинки ⊹</div>
+                <div class="sb-popup-title">「 Промпт для картинки 」</div>
                 <button class="sb-popup-x" type="button" aria-label="Закрыть"><i class="fa-solid fa-xmark"></i></button>
             </div>
             <div class="sb-popup-meta"></div>
@@ -999,7 +999,7 @@ function sbOpenPresetManager() {
     overlay.innerHTML = `
         <div class="sb-popup sb-presets" role="dialog" aria-label="Пресеты">
             <div class="sb-popup-head">
-                <div class="sb-popup-title">⊹ Пресеты ⊹</div>
+                <div class="sb-popup-title">「 Пресеты 」</div>
                 <button class="sb-popup-x" type="button" aria-label="Закрыть"><i class="fa-solid fa-xmark"></i></button>
             </div>
             <div class="sb-presets-cols">
@@ -1274,7 +1274,7 @@ function buildSettingsPanel() {
     const html = `
         <div id="sb_settings_root" class="inline-drawer">
             <div class="inline-drawer-toggle inline-drawer-header">
-                <b><i class="fa-solid fa-paintbrush" style="margin-right: 6px;"></i>⊹ STORYBOARD ⊹</b>
+                <b><i class="fa-solid fa-paintbrush" style="margin-right: 6px;"></i>「 STORYBOARD 」</b>
                 <div class="inline-drawer-icon fa-solid fa-circle-chevron-down down"></div>
             </div>
             <div class="inline-drawer-content">
